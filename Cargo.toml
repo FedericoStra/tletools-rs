@@ -11,6 +11,7 @@ edition = "2021"
 
 [dev-dependencies]
 criterion = "0.3.5"
+itertools = "0.10.3"
 # rust-tle = { git = "https://github.com/pbrandt1/rust-tle", package = "tle" }
 tle-parser = "0.1.3"
 
