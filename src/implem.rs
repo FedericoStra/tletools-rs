@@ -55,6 +55,25 @@ fn ensure_line_length_and_termination(line: &[u8]) -> Result<&[u8], Error> {
     }
 }
 
+// fn parse_special_float(s: &[u8]) -> Result<f64, std::num::ParseIntError> {
+//     assert!(s.len() == 8);
+//     let m = std::str::from_utf8(&s[0..=5])
+//         .unwrap()
+//         .trim()
+//         .parse::<i32>();
+//     let e = std::str::from_utf8(&s[6..=7]).unwrap().parse::<i32>();
+//     match (m, e) {
+//         (Ok(m), Ok(e)) => {
+//             let value = m as f64 * 10f64.powi(e - 5);
+//             Ok(value)
+//         }
+//         (Err(e), _) | (_, Err(e)) => {
+//             eprintln!("{:?}", std::str::from_utf8(s).unwrap());
+//             Err(e)
+//         }
+//     }
+// }
+
 /// Parse a TLE from a string representing three lines.
 pub fn parse(tle_str: &str) -> Result<TLE, Error> {
     let mut lines_iter = tle_str.lines();
@@ -77,7 +96,7 @@ pub fn from_lines(name: &str, line1: &str, line2: &str) -> Result<TLE, Error> {
     ensure_is!(line1[0], b'1');
     ensure_is_space!(line1[1]);
 
-    let norad = std::str::from_utf8(&line1[2..=6])?.to_string();
+    let norad = std::str::from_utf8(&line1[2..=6])?.trim().to_string();
     let classification = line1[7] as char;
 
     ensure_is_space!(line1[8]);
@@ -103,11 +122,21 @@ pub fn from_lines(name: &str, line1: &str, line2: &str) -> Result<TLE, Error> {
 
     ensure_is_space!(line1[43]);
 
-    // ddn_u6
+    let m = std::str::from_utf8(&line1[44..=49])?
+        .trim()
+        .parse::<i32>()?;
+    let e = std::str::from_utf8(&line1[50..=51])?.parse::<i32>()?;
+    let ddn_o6 = m as f64 * 10f64.powi(e - 5);
+    // let ddn_o6 = parse_special_float(&line1[44..=51])?;
 
     ensure_is_space!(line1[52]);
 
-    // bstar
+    let m = std::str::from_utf8(&line1[53..=58])?
+        .trim()
+        .parse::<i32>()?;
+    let e = std::str::from_utf8(&line1[59..=60])?.parse::<i32>()?;
+    let bstar = m as f64 * 10f64.powi(e - 5);
+    // let bstar = parse_special_float(&line1[53..=60])?;
 
     ensure_is_space!(line1[61]);
     ensure_is!(line1[62], b'0');
@@ -167,6 +196,8 @@ pub fn from_lines(name: &str, line1: &str, line2: &str) -> Result<TLE, Error> {
         .trim()
         .parse::<u32>()?;
 
+    // TODO: checksum
+
     Ok(TLE {
         name,
         norad,
@@ -175,6 +206,8 @@ pub fn from_lines(name: &str, line1: &str, line2: &str) -> Result<TLE, Error> {
         epoch_year,
         epoch_day,
         dn_o2,
+        ddn_o6,
+        bstar,
         set_num,
         inc,
         raan,
@@ -183,6 +216,5 @@ pub fn from_lines(name: &str, line1: &str, line2: &str) -> Result<TLE, Error> {
         M,
         n,
         rev_num,
-        ..TLE::default()
     })
 }
