@@ -4,8 +4,6 @@ extern crate criterion;
 use criterion::{AxisScale, Criterion, PlotConfiguration};
 
 mod rust_tle;
-use tle_parser;
-use tletools;
 
 fn compare(c: &mut Criterion) {
     let tle_string = "ISS (ZARYA)
@@ -27,6 +25,20 @@ fn compare(c: &mut Criterion) {
 
     group.bench_with_input("tletools::parse", tle_string, |b, tle_string| {
         b.iter(|| tletools::parse(tle_string))
+    });
+
+    group.bench_with_input("sgp4::parse_3les", tle_string, |b, tle_string| {
+        b.iter(|| sgp4::parse_3les(tle_string))
+    });
+
+    group.bench_with_input("sgp4::Elements::from_tle", tle_string, |b, tle_string| {
+        b.iter(|| {
+            let mut lines = tle_string.lines();
+            let name = lines.next().unwrap();
+            let line1 = lines.next().unwrap();
+            let line2 = lines.next().unwrap();
+            sgp4::Elements::from_tle(Some(name.to_string()), line1.as_bytes(), line2.as_bytes())
+        })
     });
 
     group.finish();

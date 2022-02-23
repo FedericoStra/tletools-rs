@@ -18,6 +18,8 @@ thiserror = "1.0.30"
 [dev-dependencies]
 criterion = "0.3.5"
 itertools = "0.10.3"
+serde_json = "1.0.79"
+sgp4 = "0.5.0"
 # rust-tle = { git = "https://github.com/pbrandt1/rust-tle", package = "tle" }
 tle-parser = "0.1.3"
 

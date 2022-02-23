@@ -18,7 +18,10 @@ fn main() -> io::Result<()> {
                 let line2 = chunk.next().unwrap()?;
                 // let tle_str = [name.as_str(), line1.as_str(), line2.as_str()].join("\n");
                 let tle = tletools::from_lines(name.as_str(), line1.as_str(), line2.as_str());
-                println!("{:?}", tle);
+                let sgp = sgp4::Elements::from_tle(Some(name), line1.as_bytes(), line2.as_bytes())
+                    .unwrap();
+                println!("{:#?}", tle);
+                println!("{}", serde_json::to_string(&sgp).unwrap());
             }
         }
     }
