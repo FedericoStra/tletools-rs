@@ -51,7 +51,7 @@ pub struct TLE {
     /// Mean motion.
     pub n: f64,
     /// Revolution number.
-    pub rev_num: i32,
+    pub rev_num: u32,
 }
 
 mod implem;
