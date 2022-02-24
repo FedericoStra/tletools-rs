@@ -1,8 +1,9 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take, take_while_m_n};
+use nom::character::complete::u8;
 use nom::character::complete::{char, line_ending, not_line_ending};
 use nom::character::is_digit;
-use nom::combinator::{all_consuming, opt};
+use nom::combinator::{all_consuming, map_parser, opt};
 use nom::sequence::separated_pair;
 use nom::IResult;
 
@@ -54,13 +55,23 @@ fn segment_lines(s: &str) -> IResult<&str, (&str, &str, &str)> {
     Ok((s, (line_0, line_1, line_2)))
 }
 
-fn parse_line_1(s: &str) -> IResult<&str, (&str, &str, char)> {
+fn parse_line_1(s: &str) -> IResult<&str, (&str, &str, char, i32)> {
     let (s, _) = tag("1 ")(s)?;
     let (s, norad) = take(5usize)(s)?;
     let (s, classification) = alt((char('C'), char('U'), char('S')))(s)?;
     let (s, _) = char(' ')(s)?;
     let (s, int_desig) = take(8usize)(s)?;
-    Ok((s, (norad, int_desig, classification)))
+    let (s, _) = char(' ')(s)?;
+    let (s, y) = map_parser(
+        take_while_m_n(2usize, 2usize, |c: char| c.is_digit(10)),
+        all_consuming(u8),
+    )(s)?;
+    let epoch_year = if y <= 56 {
+        2000 + y as i32
+    } else {
+        1900 + y as i32
+    };
+    Ok((s, (norad, int_desig, classification, epoch_year)))
 }
 
 fn tle_name(s: &str) -> IResult<&str, &str> {
