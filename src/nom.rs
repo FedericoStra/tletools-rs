@@ -1,6 +1,6 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take, take_while_m_n};
-use nom::character::complete::{line_ending, not_line_ending};
+use nom::character::complete::{char, line_ending, not_line_ending};
 use nom::character::is_digit;
 use nom::combinator::{all_consuming, opt};
 use nom::sequence::separated_pair;
@@ -57,20 +57,10 @@ fn segment_lines(s: &str) -> IResult<&str, (&str, &str, &str)> {
 fn parse_line_1(s: &str) -> IResult<&str, (&str, &str, char)> {
     let (s, _) = tag("1 ")(s)?;
     let (s, norad) = take(5usize)(s)?;
-    let (s, classification) = alt((tag("C"), tag("U"), tag("S")))(s)?;
-    let (s, _) = tag(" ")(s)?;
+    let (s, classification) = alt((char('C'), char('U'), char('S')))(s)?;
+    let (s, _) = char(' ')(s)?;
     let (s, int_desig) = take(8usize)(s)?;
-    Ok((
-        s,
-        (
-            norad,
-            int_desig,
-            classification
-                .chars()
-                .next()
-                .expect("cannot get classification char"),
-        ),
-    ))
+    Ok((s, (norad, int_desig, classification)))
 }
 
 fn tle_name(s: &str) -> IResult<&str, &str> {
