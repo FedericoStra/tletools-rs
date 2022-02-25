@@ -21,6 +21,7 @@ impl From<nom::Err<nom::error::Error<&str>>> for Error {
     }
 }
 
+#[cfg(feature = "nom")]
 impl std::str::FromStr for TLE {
     type Err = Error;
 
