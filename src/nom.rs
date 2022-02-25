@@ -1,9 +1,9 @@
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take, take_while_m_n};
-use nom::character::complete::u8;
 use nom::character::complete::{char, line_ending, not_line_ending};
+use nom::character::complete::{u32, u8};
 use nom::character::is_digit;
-use nom::combinator::{all_consuming, map_parser, opt};
+use nom::combinator::{all_consuming, map, map_parser, opt};
 use nom::sequence::separated_pair;
 use nom::IResult;
 
@@ -32,7 +32,8 @@ impl std::str::FromStr for TLE {
 
 fn parse_single_tle(s: &str) -> IResult<&str, TLE> {
     let (rest, (line_0, line_1, _line_2)) = all_consuming(segment_lines)(s)?;
-    let (_, (norad, int_desig, classification)) = all_consuming(parse_line_1)(line_1)?;
+    let (_, (norad, int_desig, classification, epoch_year, epoch_day)) =
+        all_consuming(parse_line_1)(line_1)?;
     Ok((
         rest,
         TLE {
@@ -40,6 +41,8 @@ fn parse_single_tle(s: &str) -> IResult<&str, TLE> {
             norad: norad.to_string(),
             int_desig: int_desig.to_string(),
             classification,
+            epoch_year,
+            epoch_day,
             ..TLE::default()
         },
     ))
@@ -55,7 +58,7 @@ fn segment_lines(s: &str) -> IResult<&str, (&str, &str, &str)> {
     Ok((s, (line_0, line_1, line_2)))
 }
 
-fn parse_line_1(s: &str) -> IResult<&str, (&str, &str, char, i32)> {
+fn parse_line_1(s: &str) -> IResult<&str, (&str, &str, char, i32, f64)> {
     let (s, _) = tag("1 ")(s)?;
     let (s, norad) = take(5usize)(s)?;
     let (s, classification) = alt((char('C'), char('U'), char('S')))(s)?;
@@ -71,11 +74,29 @@ fn parse_line_1(s: &str) -> IResult<&str, (&str, &str, char, i32)> {
     } else {
         1900 + y as i32
     };
-    Ok((s, (norad, int_desig, classification, epoch_year)))
+    let (s, epoch_day) = map(
+        separated_pair(
+            map_parser(take_digits(3), u32),
+            char('.'),
+            map_parser(take_digits(8), u32),
+        ),
+        |(i, f)| i as f64 + (f as f64) / 100000000.,
+    )(s)?;
+    Ok((s, (norad, int_desig, classification, epoch_year, epoch_day)))
 }
 
 fn tle_name(s: &str) -> IResult<&str, &str> {
     not_line_ending(s)
+}
+
+fn take_digits<I>(count: usize) -> impl Fn(I) -> IResult<I, I>
+where
+    I: nom::InputIter<Item = char>
+        + nom::InputTake
+        + nom::InputLength
+        + nom::Slice<std::ops::RangeFrom<usize>>,
+{
+    take_while_m_n(count, count, |c: char| c.is_digit(10))
 }
 
 fn f64_3_4_digits(s: &[u8]) -> IResult<&[u8], f64> {
