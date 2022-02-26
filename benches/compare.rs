@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate criterion;
-
 use criterion::{AxisScale, Criterion, PlotConfiguration};
 
 mod rust_tle;
@@ -16,7 +15,7 @@ fn compare(c: &mut Criterion) {
     group.plot_config(plot_config);
 
     group.bench_with_input("tle_parser::parse", tle_string, |b, tle_string| {
-        b.iter(|| tle_parser::parse(tle_string))
+        b.iter(|| tle_parser::parse(tle_string).unwrap())
     });
 
     group.bench_with_input("tle::parse_tle", tle_string, |b, tle_string| {
@@ -24,11 +23,15 @@ fn compare(c: &mut Criterion) {
     });
 
     group.bench_with_input("tletools::parse", tle_string, |b, tle_string| {
-        b.iter(|| tletools::parse(tle_string))
+        b.iter(|| tletools::parse(tle_string).unwrap())
+    });
+
+    group.bench_with_input("tletools::nom", tle_string, |b, tle_string| {
+        b.iter(|| tletools::nom::parse_single_tle(tle_string).unwrap())
     });
 
     group.bench_with_input("sgp4::parse_3les", tle_string, |b, tle_string| {
-        b.iter(|| sgp4::parse_3les(tle_string))
+        b.iter(|| sgp4::parse_3les(tle_string).unwrap())
     });
 
     group.bench_with_input("sgp4::Elements::from_tle", tle_string, |b, tle_string| {
@@ -38,6 +41,7 @@ fn compare(c: &mut Criterion) {
             let line1 = lines.next().unwrap();
             let line2 = lines.next().unwrap();
             sgp4::Elements::from_tle(Some(name.to_string()), line1.as_bytes(), line2.as_bytes())
+                .unwrap()
         })
     });
 
