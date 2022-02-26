@@ -31,10 +31,11 @@ impl std::str::FromStr for TLE {
     }
 }
 
-fn parse_single_tle(s: &str) -> IResult<&str, TLE> {
+pub fn parse_single_tle(s: &str) -> IResult<&str, TLE> {
     let (rest, (line_0, line_1, _line_2)) = all_consuming(segment_lines)(s)?;
     let (_, (norad, int_desig, classification, epoch_year, epoch_day)) =
-        all_consuming(parse_line_1)(line_1)?;
+        // all_consuming(parse_line_1)(line_1)?;
+        parse_line_1(line_1)?;
     Ok((
         rest,
         TLE {
@@ -167,6 +168,7 @@ fn u32_8_digits(s: &[u8]) -> IResult<&[u8], u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     use nom::error::{Error, ErrorKind};
 
@@ -374,5 +376,21 @@ mod tests {
 2 25544  51.6443 242.0161 0004885 264.6060 207.3845 15.49165514212791
 ";
         assert_eq!(tle_name(tle_string), Ok((rest, "ISS (ZARYA)")));
+    }
+
+    #[test]
+    fn test_from_str() {
+        let tle_string = "ISS (ZARYA)
+1 25544U 98067A   20045.18587073  .00000950  00000-0  25302-4 0  9990
+2 25544  51.6443 242.0161 0004885 264.6060 207.3845 15.49165514212791
+";
+        let result = parse_single_tle(tle_string);
+        eprintln!("{:?}", result);
+        let (s, tle) = result.expect("cannot parse TLE");
+        assert_eq!(s, "");
+        assert_eq!(tle.name, "ISS (ZARYA)");
+        assert_eq!(tle.classification, 'U');
+        assert_eq!(tle.epoch_year, 2020);
+        assert_eq!(tle.epoch_day, 045.18587073);
     }
 }
