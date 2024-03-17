@@ -41,5 +41,5 @@ all-features = true
 
 
 [features]
-default = ["nom", "std"]
+default = ["std"]
 std = ["dep:thiserror"]
