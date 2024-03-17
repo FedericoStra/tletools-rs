@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(doc, feature(doc_auto_cfg))]
 
 //! **TLE-tools** is a small library to work with [`two-line element set`] files.
@@ -55,7 +56,19 @@ pub struct TLE {
 }
 
 mod implem;
+use cfg_if::cfg_if;
 pub use implem::*;
 
 #[cfg(feature = "nom")]
 pub mod nom;
+
+cfg_if! {
+    if #[cfg(feature = "std")]
+    {
+        extern crate std;
+    }else{
+        extern crate alloc;
+        use alloc::string::String;
+        extern crate core as std;
+    }
+}

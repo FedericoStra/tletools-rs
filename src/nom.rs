@@ -1,3 +1,4 @@
+use cfg_if::cfg_if;
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take, take_while_m_n};
 use nom::character::complete::{char, line_ending, not_line_ending};
@@ -7,19 +8,30 @@ use nom::combinator::{all_consuming, map, map_parser, opt};
 use nom::sequence::separated_pair;
 use nom::IResult;
 
-use thiserror::Error;
-
-use crate::TLE;
-
-#[derive(Debug, Error)]
-#[error("invalid TLE string")]
-pub struct Error;
-
-impl From<nom::Err<nom::error::Error<&str>>> for Error {
-    fn from(_: nom::Err<nom::error::Error<&str>>) -> Error {
-        Error
+cfg_if! {
+    if #[cfg(feature = "std")]
+    {
+        use thiserror::Error;
+        #[derive(Debug, Error)]
+        #[error("invalid TLE string")]
+        pub struct Error;
+        impl From<nom::Err<nom::error::Error<&str>>> for Error {
+            fn from(_: nom::Err<nom::error::Error<&str>>) -> Error {
+                Error
+            }
+        }
+    }else{
+        use alloc::string::ToString;
+        pub struct Error;
+        impl From<nom::Err<nom::error::Error<&str>>> for Error {
+            fn from(_: nom::Err<nom::error::Error<&str>>) -> Self {
+                Error
+            }
+        }
     }
 }
+
+use crate::TLE;
 
 #[cfg(feature = "nom")]
 impl std::str::FromStr for TLE {
@@ -168,7 +180,6 @@ fn u32_8_digits(s: &[u8]) -> IResult<&[u8], u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::str::FromStr;
 
     use nom::error::{Error, ErrorKind};
 
@@ -385,6 +396,7 @@ mod tests {
 2 25544  51.6443 242.0161 0004885 264.6060 207.3845 15.49165514212791
 ";
         let result = parse_single_tle(tle_string);
+        #[cfg(feature = "std")]
         eprintln!("{:?}", result);
         let (s, tle) = result.expect("cannot parse TLE");
         assert_eq!(s, "");
