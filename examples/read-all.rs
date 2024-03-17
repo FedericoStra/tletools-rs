@@ -1,9 +1,6 @@
+use itertools::Itertools;
 use std::fs;
 use std::io::{self, prelude::*, BufReader};
-
-use itertools::Itertools;
-
-use tletools;
 
 fn main() -> io::Result<()> {
     for date_folder in fs::read_dir("data")? {

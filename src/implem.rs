@@ -1,22 +1,51 @@
-use thiserror::Error;
-
 use crate::TLE;
+use cfg_if::cfg_if;
 
-pub type BoxError = std::boxed::Box<dyn std::error::Error + std::marker::Send + std::marker::Sync>;
-
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
-#[error("invalid TLE string")]
-pub enum Error {
-    #[error("invalid encoding")]
-    EncodingError(#[from] std::str::Utf8Error),
-    #[error("invalid format, reason: {0}")]
-    InvalidFormat(&'static str),
-    #[error("cannot parse {0}")]
-    ParseError(&'static str),
-    #[error("cannot parse int")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("cannot parse float")]
-    ParseFloatError(#[from] std::num::ParseFloatError),
+cfg_if! {
+    if #[cfg(feature = "std")]
+    {
+        use thiserror::Error;
+        pub type BoxError = std::boxed::Box<dyn std::error::Error + std::marker::Send + std::marker::Sync>;
+        #[derive(Error, Debug, Clone, PartialEq, Eq)]
+        #[error("invalid TLE string")]
+        pub enum Error {
+            #[error("invalid encoding")]
+            EncodingError(#[from] std::str::Utf8Error),
+            #[error("invalid format, reason: {0}")]
+            InvalidFormat(&'static str),
+            #[error("cannot parse {0}")]
+            ParseError(&'static str),
+            #[error("cannot parse int")]
+            ParseIntError(#[from] std::num::ParseIntError),
+            #[error("cannot parse float")]
+            ParseFloatError(#[from] std::num::ParseFloatError),
+        }
+    }else{
+        use alloc::string::ToString;
+        #[derive(Debug, Clone, PartialEq, Eq)]
+        pub enum Error {
+            EncodingError(std::str::Utf8Error),
+            InvalidFormat(&'static str),
+            ParseError(&'static str),
+            ParseIntError(std::num::ParseIntError),
+            ParseFloatError(std::num::ParseFloatError),
+        }
+        impl From<std::str::Utf8Error> for Error {
+            fn from(error: std::str::Utf8Error) -> Self {
+                Error::EncodingError(error)
+            }
+        }
+        impl From<std::num::ParseIntError> for Error {
+            fn from(error: std::num::ParseIntError) -> Self {
+                Error::ParseIntError(error)
+            }
+        }
+        impl From<std::num::ParseFloatError> for Error {
+            fn from(error: std::num::ParseFloatError) -> Self {
+                Error::ParseFloatError(error)
+            }
+        }
+    }
 }
 
 macro_rules! get_next_or_incomplete_error {
@@ -126,7 +155,12 @@ pub fn from_lines(name: &str, line1: &str, line2: &str) -> Result<TLE, Error> {
         .trim()
         .parse::<i32>()?;
     let e = std::str::from_utf8(&line1[50..=51])?.parse::<i32>()?;
+    #[cfg(feature = "std")]
     let ddn_o6 = m as f64 * 10f64.powi(e - 5);
+
+    #[cfg(not(feature = "std"))]
+    let ddn_o6 = m as f64 * num_traits::pow(10f64, (e - 5) as usize);
+
     // let ddn_o6 = parse_special_float(&line1[44..=51])?;
 
     ensure_is_space!(line1[52]);
@@ -135,7 +169,11 @@ pub fn from_lines(name: &str, line1: &str, line2: &str) -> Result<TLE, Error> {
         .trim()
         .parse::<i32>()?;
     let e = std::str::from_utf8(&line1[59..=60])?.parse::<i32>()?;
+    #[cfg(feature = "std")]
     let bstar = m as f64 * 10f64.powi(e - 5);
+    #[cfg(not(feature = "std"))]
+    let bstar = m as f64 * num_traits::pow(10f64, (e - 5) as usize);
+
     // let bstar = parse_special_float(&line1[53..=60])?;
 
     ensure_is_space!(line1[61]);

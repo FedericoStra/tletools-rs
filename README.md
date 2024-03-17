@@ -10,6 +10,16 @@
 `TLE-tools` is a small library to work with [two-line element
 set](https://en.wikipedia.org/wiki/Two-line_element_set) files.
 
+## Features
+
+This crate can be used without the standard library (`#![no_std]`) by disabling
+the default `std` feature. Use this in `Cargo.toml`:
+
+```toml
+[dependencies]
+tletools = {version = "0.x.y", default-features = false} 
+```
+
 ## Purpose
 
 The purpose of the library is to parse TLE sets into convenient `TLE` structures.
@@ -47,3 +57,4 @@ Some more or less complete TLE format specifications can be found on the followi
 - Documentation: https://docs.rs/tletools
 - Releases: https://crates.io/crates/tletools
 - Issue tracker: https://github.com/FedericoStra/tletools-rs/issues
+
